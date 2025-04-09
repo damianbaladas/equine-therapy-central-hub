@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,31 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom theme colors for equine therapy
+				"equine": {
+					"green": {
+						"100": "#E8F5E9",
+						"200": "#C8E6C9",
+						"300": "#A5D6A7",
+						"400": "#81C784",
+						"500": "#4CAF50",
+						"600": "#4D724D",
+						"700": "#388E3C",
+						"800": "#2E7D32",
+						"900": "#1B5E20"
+					},
+					"brown": {
+						"100": "#EFEBE9",
+						"200": "#D7CCC8",
+						"300": "#BCAAA4",
+						"400": "#A1887F",
+						"500": "#8B4513",
+						"600": "#6D4C41",
+						"700": "#5D4037",
+						"800": "#4E342E",
+						"900": "#3E2723"
+					}
 				}
 			},
 			borderRadius: {
