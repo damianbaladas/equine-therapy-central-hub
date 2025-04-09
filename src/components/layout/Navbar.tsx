@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Calendar, Users, User, Horse } from 'lucide-react';
+import { Menu, X, Calendar, UsersRound, UserRound, PawPrint } from 'lucide-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,9 +12,9 @@ const Navbar = () => {
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: <Calendar className="h-5 w-5" /> },
-    { name: 'Pacientes', path: '/patients', icon: <Users className="h-5 w-5" /> },
-    { name: 'Profesionales', path: '/professionals', icon: <User className="h-5 w-5" /> },
-    { name: 'Caballos', path: '/horses', icon: <Horse className="h-5 w-5" /> },
+    { name: 'Pacientes', path: '/patients', icon: <UsersRound className="h-5 w-5" /> },
+    { name: 'Profesionales', path: '/professionals', icon: <UserRound className="h-5 w-5" /> },
+    { name: 'Caballos', path: '/horses', icon: <PawPrint className="h-5 w-5" /> },
     { name: 'Agenda', path: '/schedule', icon: <Calendar className="h-5 w-5" /> },
   ];
 
@@ -24,7 +24,7 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <Horse className="h-8 w-8" />
+              <PawPrint className="h-8 w-8" />
               <span className="text-xl font-bold">Centro de Equinoterapia</span>
             </Link>
           </div>

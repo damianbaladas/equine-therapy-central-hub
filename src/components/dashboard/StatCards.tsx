@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Users, Calendar, User, Horse, Clock } from 'lucide-react';
+import { UsersRound, Calendar, UserRound, PawPrint, Clock } from 'lucide-react';
 
 type StatCardProps = {
   title: string;
@@ -27,7 +27,7 @@ const StatCards = () => {
     {
       title: "Pacientes Activos",
       value: 42,
-      icon: <Users size={24} />,
+      icon: <UsersRound size={24} />,
       color: "bg-equine-green-100",
     },
     {
@@ -39,13 +39,13 @@ const StatCards = () => {
     {
       title: "Profesionales",
       value: 7,
-      icon: <User size={24} />,
+      icon: <UserRound size={24} />,
       color: "bg-equine-green-100",
     },
     {
       title: "Caballos Disponibles",
       value: 5,
-      icon: <Horse size={24} />,
+      icon: <PawPrint size={24} />,
       color: "bg-equine-brown-100",
     },
     {

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, ChevronRight } from 'lucide-react';
+import { Calendar, ChevronRight, UsersRound, UserRound, PawPrint } from 'lucide-react';
 import StatCards from '@/components/dashboard/StatCards';
 import { Link } from 'react-router-dom';
 
@@ -67,7 +67,7 @@ const Index = () => {
           <div className="space-y-4">
             <div className="flex items-start gap-3 p-3 rounded-md hover:bg-equine-green-50">
               <div className="rounded-full bg-equine-green-200 p-2">
-                <Users className="h-5 w-5 text-equine-green-700" />
+                <UsersRound className="h-5 w-5 text-equine-green-700" />
               </div>
               <div>
                 <p className="text-sm font-medium">Nuevo paciente registrado</p>
@@ -85,7 +85,7 @@ const Index = () => {
             </div>
             <div className="flex items-start gap-3 p-3 rounded-md hover:bg-equine-green-50">
               <div className="rounded-full bg-equine-green-200 p-2">
-                <Horse className="h-5 w-5 text-equine-green-700" />
+                <PawPrint className="h-5 w-5 text-equine-green-700" />
               </div>
               <div>
                 <p className="text-sm font-medium">Actualización de caballo</p>
@@ -94,7 +94,7 @@ const Index = () => {
             </div>
             <div className="flex items-start gap-3 p-3 rounded-md hover:bg-equine-green-50">
               <div className="rounded-full bg-equine-brown-200 p-2">
-                <User className="h-5 w-5 text-equine-brown-700" />
+                <UserRound className="h-5 w-5 text-equine-brown-700" />
               </div>
               <div>
                 <p className="text-sm font-medium">Nuevo profesional</p>
