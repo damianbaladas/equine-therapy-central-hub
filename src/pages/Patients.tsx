@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Eye, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Patient {
   id: number;
@@ -24,9 +26,11 @@ interface Patient {
 
 const Patients = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const { toast } = useToast();
 
   // Mock data for patients
   const [patients, setPatients] = useState<Patient[]>([
@@ -84,6 +88,8 @@ const Patients = () => {
     observations: ''
   });
 
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+
   const handleAddPatient = () => {
     const id = patients.length > 0 ? Math.max(...patients.map(p => p.id)) + 1 : 1;
     setPatients([...patients, { id, ...newPatient }]);
@@ -100,6 +106,10 @@ const Patients = () => {
       progress: '',
       observations: ''
     });
+    toast({
+      title: "Paciente agregado",
+      description: "El paciente ha sido agregado exitosamente",
+    });
   };
 
   const handleViewPatient = (patient: Patient) => {
@@ -107,8 +117,30 @@ const Patients = () => {
     setIsViewDialogOpen(true);
   };
 
+  const handleEditPatient = (patient: Patient) => {
+    setEditingPatient({ ...patient });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingPatient) {
+      setPatients(patients.map(p => p.id === editingPatient.id ? editingPatient : p));
+      setIsEditDialogOpen(false);
+      setEditingPatient(null);
+      toast({
+        title: "Paciente actualizado",
+        description: "Los datos del paciente han sido actualizados exitosamente",
+      });
+    }
+  };
+
   const handleDeletePatient = (id: number) => {
     setPatients(patients.filter(patient => patient.id !== id));
+    toast({
+      title: "Paciente eliminado",
+      description: "El paciente ha sido eliminado exitosamente",
+      variant: "destructive",
+    });
   };
 
   const filteredPatients = patients.filter(
@@ -162,7 +194,7 @@ const Patients = () => {
                   <Button variant="ghost" size="sm" onClick={() => handleViewPatient(patient)}>
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => handleEditPatient(patient)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleDeletePatient(patient.id)}>
@@ -351,8 +383,116 @@ const Patients = () => {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Cerrar</Button>
-            <Button variant="outline">Editar</Button>
+            <Button variant="outline" onClick={() => {
+              if (selectedPatient) {
+                setIsViewDialogOpen(false);
+                handleEditPatient(selectedPatient);
+              }
+            }}>Editar</Button>
             <Button className="bg-equine-green-600 hover:bg-equine-green-700">Agendar Sesión</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Patient Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Paciente</DialogTitle>
+            <DialogDescription>Modifique la información del paciente.</DialogDescription>
+          </DialogHeader>
+          {editingPatient && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div>
+                <Label htmlFor="edit-ci">Cédula de Identidad</Label>
+                <Input 
+                  id="edit-ci" 
+                  value={editingPatient.ci}
+                  onChange={(e) => setEditingPatient({...editingPatient, ci: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-name">Nombre</Label>
+                <Input 
+                  id="edit-name" 
+                  value={editingPatient.name}
+                  onChange={(e) => setEditingPatient({...editingPatient, name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-lastName">Apellido</Label>
+                <Input 
+                  id="edit-lastName" 
+                  value={editingPatient.lastName}
+                  onChange={(e) => setEditingPatient({...editingPatient, lastName: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-age">Edad</Label>
+                <Input 
+                  id="edit-age" 
+                  type="number"
+                  value={editingPatient.age.toString()}
+                  onChange={(e) => setEditingPatient({...editingPatient, age: parseInt(e.target.value) || 0})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-phone">Teléfono</Label>
+                <Input 
+                  id="edit-phone" 
+                  value={editingPatient.phone}
+                  onChange={(e) => setEditingPatient({...editingPatient, phone: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-email">Email</Label>
+                <Input 
+                  id="edit-email" 
+                  type="email"
+                  value={editingPatient.email}
+                  onChange={(e) => setEditingPatient({...editingPatient, email: e.target.value})}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-parents">Padres</Label>
+                <Input 
+                  id="edit-parents" 
+                  value={editingPatient.parents}
+                  onChange={(e) => setEditingPatient({...editingPatient, parents: e.target.value})}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-medicalHistory">Historial Médico</Label>
+                <Textarea 
+                  id="edit-medicalHistory" 
+                  rows={3}
+                  value={editingPatient.medicalHistory}
+                  onChange={(e) => setEditingPatient({...editingPatient, medicalHistory: e.target.value})}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-progress">Progreso de la Terapia</Label>
+                <Textarea 
+                  id="edit-progress" 
+                  rows={3}
+                  value={editingPatient.progress}
+                  onChange={(e) => setEditingPatient({...editingPatient, progress: e.target.value})}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-observations">Observaciones</Label>
+                <Textarea 
+                  id="edit-observations" 
+                  rows={3}
+                  value={editingPatient.observations}
+                  onChange={(e) => setEditingPatient({...editingPatient, observations: e.target.value})}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} className="bg-equine-green-600 hover:bg-equine-green-700">Guardar Cambios</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
