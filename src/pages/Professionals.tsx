@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Eye, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Professional {
   id: number;
@@ -19,8 +21,10 @@ interface Professional {
 }
 
 const Professionals = () => {
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
 
@@ -94,6 +98,16 @@ const Professionals = () => {
     role: 'Técnico'
   });
 
+  const [editProfessional, setEditProfessional] = useState<Professional>({
+    id: 0,
+    ci: '',
+    name: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    role: 'Técnico'
+  });
+
   const handleAddProfessional = () => {
     const id = professionals.length > 0 ? Math.max(...professionals.map(p => p.id)) + 1 : 1;
     setProfessionals([...professionals, { id, ...newProfessional }]);
@@ -106,6 +120,11 @@ const Professionals = () => {
       phone: '',
       role: 'Técnico'
     });
+    
+    toast({
+      title: "Profesional agregado",
+      description: `${newProfessional.name} ${newProfessional.lastName} ha sido agregado correctamente.`
+    });
   };
 
   const handleViewProfessional = (professional: Professional) => {
@@ -113,8 +132,32 @@ const Professionals = () => {
     setIsViewDialogOpen(true);
   };
 
+  const handleEditProfessional = (professional: Professional) => {
+    setEditProfessional({ ...professional });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateProfessional = () => {
+    setProfessionals(
+      professionals.map(p => (p.id === editProfessional.id ? editProfessional : p))
+    );
+    setIsEditDialogOpen(false);
+    
+    toast({
+      title: "Profesional actualizado",
+      description: `${editProfessional.name} ${editProfessional.lastName} ha sido actualizado correctamente.`
+    });
+  };
+
   const handleDeleteProfessional = (id: number) => {
+    const professionalToDelete = professionals.find(p => p.id === id);
     setProfessionals(professionals.filter(professional => professional.id !== id));
+    
+    toast({
+      title: "Profesional eliminado",
+      description: professionalToDelete ? `${professionalToDelete.name} ${professionalToDelete.lastName} ha sido eliminado.` : "El profesional ha sido eliminado.",
+      variant: "destructive"
+    });
   };
 
   const handleAddRole = () => {
@@ -122,6 +165,11 @@ const Professionals = () => {
       setRoles([...roles, newRole]);
       setNewRole('');
       setIsAddRoleDialogOpen(false);
+      
+      toast({
+        title: "Rol agregado",
+        description: `El rol "${newRole}" ha sido agregado correctamente.`
+      });
     }
   };
 
@@ -145,6 +193,37 @@ const Professionals = () => {
     
     return roleColors[role] || 'bg-equine-green-100 text-equine-green-800';
   };
+
+  // Attempt to fetch professionals from Supabase
+  useEffect(() => {
+    const fetchProfessionals = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('personal')
+          .select('*');
+        
+        if (error) {
+          console.error('Error fetching professionals:', error);
+        } else if (data.length > 0) {
+          // Map Supabase data to our Professional interface
+          const mappedData: Professional[] = data.map((item, index) => ({
+            id: index + 1,
+            ci: item.cedula || '',
+            name: item.nombre || '',
+            lastName: item.apellido || '',
+            email: item.email || '',
+            phone: item.telefono || '',
+            role: item.cargo || 'Técnico'
+          }));
+          setProfessionals(mappedData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch professionals:', error);
+      }
+    };
+
+    fetchProfessionals();
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -197,7 +276,7 @@ const Professionals = () => {
                   <Button variant="ghost" size="sm" onClick={() => handleViewProfessional(professional)}>
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => handleEditProfessional(professional)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleDeleteProfessional(professional.id)}>
@@ -346,7 +425,87 @@ const Professionals = () => {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Cerrar</Button>
-            <Button variant="outline">Editar</Button>
+            <Button variant="outline" onClick={() => {
+              if (selectedProfessional) {
+                handleEditProfessional(selectedProfessional);
+                setIsViewDialogOpen(false);
+              }
+            }}>Editar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Professional Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Profesional</DialogTitle>
+            <DialogDescription>Modifique la información del profesional.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div>
+              <Label htmlFor="edit-ci">Cédula de Identidad</Label>
+              <Input 
+                id="edit-ci" 
+                value={editProfessional.ci}
+                onChange={(e) => setEditProfessional({...editProfessional, ci: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-name">Nombre</Label>
+              <Input 
+                id="edit-name" 
+                value={editProfessional.name}
+                onChange={(e) => setEditProfessional({...editProfessional, name: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-lastName">Apellido</Label>
+              <Input 
+                id="edit-lastName" 
+                value={editProfessional.lastName}
+                onChange={(e) => setEditProfessional({...editProfessional, lastName: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-email">Email</Label>
+              <Input 
+                id="edit-email" 
+                type="email"
+                value={editProfessional.email}
+                onChange={(e) => setEditProfessional({...editProfessional, email: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-phone">Teléfono</Label>
+              <Input 
+                id="edit-phone" 
+                value={editProfessional.phone}
+                onChange={(e) => setEditProfessional({...editProfessional, phone: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-role">Rol</Label>
+              <Select 
+                value={editProfessional.role} 
+                onValueChange={(value) => setEditProfessional({...editProfessional, role: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleUpdateProfessional} className="bg-equine-green-600 hover:bg-equine-green-700">Guardar Cambios</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
