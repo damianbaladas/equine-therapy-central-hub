@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -6,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react";
 
-import { Home, Users, CalendarDays, Calendar as CalendarIcon, HorseSaddle, Clock } from 'lucide-react';
+import { Home, Users, CalendarDays, Calendar as CalendarIcon, Clock } from 'lucide-react';
+// Import our custom HorseSaddle icon from our icons directory
+import { HorseSaddle } from '@/components/icons';
 
 interface NavItemProps {
   name: string;
