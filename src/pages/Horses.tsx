@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface Horse {
   id: number;
@@ -20,8 +22,11 @@ interface Horse {
 }
 
 const Horses = () => {
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedHorse, setSelectedHorse] = useState<Horse | null>(null);
 
@@ -94,6 +99,8 @@ const Horses = () => {
     temperament: 'Tranquilo'
   });
 
+  const [editHorse, setEditHorse] = useState<Horse | null>(null);
+
   const handleAddHorse = () => {
     const id = horses.length > 0 ? Math.max(...horses.map(h => h.id)) + 1 : 1;
     setHorses([...horses, { id, ...newHorse }]);
@@ -106,6 +113,11 @@ const Horses = () => {
       breed: '',
       temperament: 'Tranquilo'
     });
+    
+    toast({
+      title: "Caballo agregado",
+      description: `${newHorse.name} ha sido agregado exitosamente.`,
+    });
   };
 
   const handleViewHorse = (horse: Horse) => {
@@ -113,14 +125,57 @@ const Horses = () => {
     setIsViewDialogOpen(true);
   };
 
-  const handleDeleteHorse = (id: number) => {
-    setHorses(horses.filter(horse => horse.id !== id));
+  const handleEditClick = (horse: Horse) => {
+    setEditHorse({...horse});
+    setIsEditDialogOpen(true);
+    setIsViewDialogOpen(false);
+  };
+
+  const handleUpdateHorse = () => {
+    if (!editHorse) return;
+    
+    setHorses(horses.map(horse => 
+      horse.id === editHorse.id ? editHorse : horse
+    ));
+    
+    setIsEditDialogOpen(false);
+    
+    toast({
+      title: "Caballo actualizado",
+      description: `La información de ${editHorse.name} ha sido actualizada.`,
+    });
+  };
+
+  const handleConfirmDelete = (id: number) => {
+    setSelectedHorse(horses.find(horse => horse.id === id) || null);
+    setIsDeleteAlertOpen(true);
+  };
+
+  const handleDeleteHorse = () => {
+    if (!selectedHorse) return;
+    
+    setHorses(horses.filter(horse => horse.id !== selectedHorse.id));
+    setIsDeleteAlertOpen(false);
+    
+    toast({
+      title: "Caballo eliminado",
+      description: `${selectedHorse.name} ha sido eliminado del sistema.`,
+      variant: "destructive",
+    });
   };
 
   const handleToggleAvailability = (id: number) => {
     setHorses(horses.map(horse => 
       horse.id === id ? { ...horse, availability: !horse.availability } : horse
     ));
+    
+    const updatedHorse = horses.find(h => h.id === id);
+    if (updatedHorse) {
+      toast({
+        title: updatedHorse.availability ? "Caballo marcado como no disponible" : "Caballo marcado como disponible",
+        description: `El estado de ${updatedHorse.name} ha sido actualizado.`,
+      });
+    }
   };
 
   const filteredHorses = horses.filter(
@@ -180,10 +235,10 @@ const Horses = () => {
                   <Button variant="ghost" size="sm" onClick={() => handleViewHorse(horse)}>
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => handleEditClick(horse)}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteHorse(horse.id)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleConfirmDelete(horse.id)}>
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
@@ -291,6 +346,88 @@ const Horses = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Horse Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Caballo</DialogTitle>
+            <DialogDescription>Modifique la información del caballo.</DialogDescription>
+          </DialogHeader>
+          {editHorse && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div>
+                <Label htmlFor="edit-name">Nombre</Label>
+                <Input 
+                  id="edit-name" 
+                  value={editHorse.name}
+                  onChange={(e) => setEditHorse({...editHorse, name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-age">Edad</Label>
+                <Input 
+                  id="edit-age" 
+                  type="number"
+                  value={editHorse.age.toString()}
+                  onChange={(e) => setEditHorse({...editHorse, age: parseInt(e.target.value) || 0})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-breed">Raza</Label>
+                <Input 
+                  id="edit-breed" 
+                  value={editHorse.breed}
+                  onChange={(e) => setEditHorse({...editHorse, breed: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-temperament">Temperamento</Label>
+                <Select 
+                  value={editHorse.temperament} 
+                  onValueChange={(value) => setEditHorse({...editHorse, temperament: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar temperamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {temperaments.map((temp) => (
+                      <SelectItem key={temp} value={temp}>
+                        {temp}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-health">Estado de Salud</Label>
+                <Textarea 
+                  id="edit-health" 
+                  rows={3}
+                  value={editHorse.health}
+                  onChange={(e) => setEditHorse({...editHorse, health: e.target.value})}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <div className="flex items-center space-x-2">
+                  <input 
+                    type="checkbox" 
+                    id="edit-availability" 
+                    checked={editHorse.availability}
+                    onChange={(e) => setEditHorse({...editHorse, availability: e.target.checked})}
+                    className="rounded border-gray-300 text-equine-green-600 focus:ring-equine-green-500"
+                  />
+                  <Label htmlFor="edit-availability">Disponible para terapia</Label>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleUpdateHorse} className="bg-equine-green-600 hover:bg-equine-green-700">Guardar Cambios</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* View Horse Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent>
@@ -358,7 +495,7 @@ const Horses = () => {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Cerrar</Button>
-            <Button variant="outline">Editar</Button>
+            <Button variant="outline" onClick={() => selectedHorse && handleEditClick(selectedHorse)}>Editar</Button>
             {selectedHorse && (
               <Button 
                 onClick={() => {
@@ -375,6 +512,27 @@ const Horses = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro de eliminar este caballo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente al caballo {selectedHorse?.name} y eliminará sus datos del sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteHorse}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

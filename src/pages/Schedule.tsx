@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface Session {
   id: number;
@@ -43,9 +45,13 @@ interface Horse {
 }
 
 const Schedule = () => {
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date()));
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
   // Mock data
   const patients: Patient[] = [
@@ -125,6 +131,15 @@ const Schedule = () => {
     time: '10:00'
   });
 
+  const [editingSession, setEditingSession] = useState({
+    id: 0,
+    patientId: '',
+    professionalId: '',
+    horseId: '',
+    date: '',
+    time: ''
+  });
+
   // Time slots for the schedule (8 AM to 6 PM)
   const timeSlots: TimeSlot[] = Array.from({ length: 10 }, (_, i) => {
     const hour = i + 8;
@@ -158,7 +173,11 @@ const Schedule = () => {
     );
     
     if (horseSessions.length >= 4) {
-      alert('Este caballo ya tiene el máximo de 4 sesiones para hoy.');
+      toast({
+        title: "Error",
+        description: "Este caballo ya tiene el máximo de 4 sesiones para hoy.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -168,7 +187,11 @@ const Schedule = () => {
     );
 
     if (professionalSessions.length > 0) {
-      alert('El profesional ya tiene una sesión agendada para este horario.');
+      toast({
+        title: "Error",
+        description: "El profesional ya tiene una sesión agendada para este horario.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -178,12 +201,20 @@ const Schedule = () => {
     const selectedHorse = horses.find(h => h.id === parseInt(newSession.horseId));
 
     if (!selectedPatient || !selectedProfessional || !selectedHorse) {
-      alert('Por favor, complete todos los campos.');
+      toast({
+        title: "Error",
+        description: "Por favor, complete todos los campos.",
+        variant: "destructive"
+      });
       return;
     }
 
     if (!selectedHorse.availability) {
-      alert('Este caballo no está disponible actualmente.');
+      toast({
+        title: "Error",
+        description: "Este caballo no está disponible actualmente.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -208,6 +239,105 @@ const Schedule = () => {
       horseId: '',
       date: format(currentDate),
       time: '10:00'
+    });
+
+    toast({
+      title: "Sesión agendada",
+      description: `Se ha programado una sesión para ${selectedPatient.name} ${selectedPatient.lastName} con éxito.`,
+    });
+  };
+
+  const handleEditSession = (session: Session) => {
+    setEditingSession({
+      id: session.id,
+      patientId: session.patientId.toString(),
+      professionalId: session.professionalId.toString(),
+      horseId: session.horseId.toString(),
+      date: session.date,
+      time: session.time
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateSession = () => {
+    // Validate professional availability
+    const selectedDate = editingSession.date;
+    const selectedTime = editingSession.time;
+    const professionalSessions = sessions.filter(
+      s => s.date === selectedDate && 
+          s.time === selectedTime && 
+          s.professionalId === parseInt(editingSession.professionalId) &&
+          s.id !== editingSession.id // Exclude the current session
+    );
+
+    if (professionalSessions.length > 0) {
+      toast({
+        title: "Error",
+        description: "El profesional ya tiene una sesión agendada para este horario.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Find names for the selected IDs
+    const selectedPatient = patients.find(p => p.id === parseInt(editingSession.patientId));
+    const selectedProfessional = professionals.find(p => p.id === parseInt(editingSession.professionalId));
+    const selectedHorse = horses.find(h => h.id === parseInt(editingSession.horseId));
+
+    if (!selectedPatient || !selectedProfessional || !selectedHorse) {
+      toast({
+        title: "Error",
+        description: "Por favor, complete todos los campos.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedHorse.availability) {
+      toast({
+        title: "Error",
+        description: "Este caballo no está disponible actualmente.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const updatedSession: Session = {
+      id: editingSession.id,
+      date: editingSession.date,
+      time: editingSession.time,
+      patientId: parseInt(editingSession.patientId),
+      patientName: `${selectedPatient.name} ${selectedPatient.lastName}`,
+      professionalId: parseInt(editingSession.professionalId),
+      professionalName: `${selectedProfessional.name} ${selectedProfessional.lastName}`,
+      horseId: parseInt(editingSession.horseId),
+      horseName: selectedHorse.name
+    };
+
+    setSessions(sessions.map(s => s.id === updatedSession.id ? updatedSession : s));
+    setIsEditDialogOpen(false);
+
+    toast({
+      title: "Sesión actualizada",
+      description: `La sesión de ${selectedPatient.name} ${selectedPatient.lastName} ha sido actualizada con éxito.`,
+    });
+  };
+
+  const handleDeleteClick = (session: Session) => {
+    setSelectedSession(session);
+    setIsDeleteAlertOpen(true);
+  };
+
+  const handleDeleteSession = () => {
+    if (!selectedSession) return;
+
+    setSessions(sessions.filter(s => s.id !== selectedSession.id));
+    setIsDeleteAlertOpen(false);
+
+    toast({
+      title: "Sesión eliminada",
+      description: `La sesión de ${selectedSession.patientName} ha sido eliminada del calendario.`,
+      variant: "destructive",
     });
   };
 
@@ -254,7 +384,14 @@ const Schedule = () => {
                         <div key={session.id} className="bg-equine-green-50 p-4 rounded-md">
                           <div className="flex justify-between">
                             <p className="font-medium">{session.patientName}</p>
-                            <Button variant="ghost" size="sm">X</Button>
+                            <div className="flex space-x-1">
+                              <Button variant="ghost" size="sm" onClick={() => handleEditSession(session)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(session)}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
                           </div>
                           <p className="text-sm text-muted-foreground">Profesional: {session.professionalName}</p>
                           <p className="text-sm text-muted-foreground">Caballo: {session.horseName}</p>
@@ -373,6 +510,128 @@ const Schedule = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Session Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Sesión</DialogTitle>
+            <DialogDescription>Modifique la información de la sesión programada.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-4 py-4">
+            <div>
+              <Label htmlFor="edit-date">Fecha</Label>
+              <input 
+                type="date" 
+                id="edit-date"
+                className="equine-input w-full"
+                value={editingSession.date}
+                onChange={(e) => setEditingSession({...editingSession, date: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-time">Hora</Label>
+              <Select 
+                value={editingSession.time} 
+                onValueChange={(value) => setEditingSession({...editingSession, time: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar hora" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 10 }, (_, i) => {
+                    const hour = i + 8;
+                    return (
+                      <SelectItem key={hour} value={`${hour}:00`}>
+                        {`${hour}:00`}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-patient">Paciente</Label>
+              <Select 
+                value={editingSession.patientId} 
+                onValueChange={(value) => setEditingSession({...editingSession, patientId: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar paciente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {patients.map((patient) => (
+                    <SelectItem key={patient.id} value={patient.id.toString()}>
+                      {`${patient.name} ${patient.lastName}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-professional">Profesional</Label>
+              <Select 
+                value={editingSession.professionalId} 
+                onValueChange={(value) => setEditingSession({...editingSession, professionalId: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar profesional" />
+                </SelectTrigger>
+                <SelectContent>
+                  {professionals.map((professional) => (
+                    <SelectItem key={professional.id} value={professional.id.toString()}>
+                      {`${professional.name} ${professional.lastName}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-horse">Caballo</Label>
+              <Select 
+                value={editingSession.horseId} 
+                onValueChange={(value) => setEditingSession({...editingSession, horseId: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar caballo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {horses.filter(h => h.availability).map((horse) => (
+                    <SelectItem key={horse.id} value={horse.id.toString()}>
+                      {horse.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleUpdateSession} className="bg-equine-green-600 hover:bg-equine-green-700">Guardar Cambios</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro de eliminar esta sesión?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente la sesión programada para {selectedSession?.patientName}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteSession}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
