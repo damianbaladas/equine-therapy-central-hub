@@ -1,13 +1,15 @@
-
 import React, { useState } from 'react';
-import { Plus, ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
+import TimeSlotComponent from '@/components/schedule/TimeSlot';
+import DateNavigation from '@/components/schedule/DateNavigation';
+import { 
+  AddSessionDialog, 
+  EditSessionDialog, 
+  DeleteSessionAlert 
+} from '@/components/schedule/ScheduleDialogs';
 
 interface Session {
   id: number;
@@ -50,10 +52,8 @@ const Schedule = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<string>(format(new Date()));
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
-  // Mock data
   const patients: Patient[] = [
     { id: 1, name: 'Juan', lastName: 'Pérez' },
     { id: 2, name: 'María', lastName: 'González' },
@@ -140,7 +140,6 @@ const Schedule = () => {
     time: ''
   });
 
-  // Time slots for the schedule (8 AM to 6 PM)
   const timeSlots: TimeSlot[] = Array.from({ length: 10 }, (_, i) => {
     const hour = i + 8;
     const time = `${hour}:00`;
@@ -165,7 +164,6 @@ const Schedule = () => {
   };
 
   const handleAddSession = () => {
-    // Validate session doesn't exceed horse limit
     const selectedDate = newSession.date;
     const selectedTime = newSession.time;
     const horseSessions = sessions.filter(
@@ -181,7 +179,6 @@ const Schedule = () => {
       return;
     }
 
-    // Validate professional availability
     const professionalSessions = sessions.filter(
       s => s.date === selectedDate && s.time === selectedTime && s.professionalId === parseInt(newSession.professionalId)
     );
@@ -195,7 +192,6 @@ const Schedule = () => {
       return;
     }
 
-    // Find names for the selected IDs
     const selectedPatient = patients.find(p => p.id === parseInt(newSession.patientId));
     const selectedProfessional = professionals.find(p => p.id === parseInt(newSession.professionalId));
     const selectedHorse = horses.find(h => h.id === parseInt(newSession.horseId));
@@ -260,14 +256,13 @@ const Schedule = () => {
   };
 
   const handleUpdateSession = () => {
-    // Validate professional availability
     const selectedDate = editingSession.date;
     const selectedTime = editingSession.time;
     const professionalSessions = sessions.filter(
       s => s.date === selectedDate && 
           s.time === selectedTime && 
           s.professionalId === parseInt(editingSession.professionalId) &&
-          s.id !== editingSession.id // Exclude the current session
+          s.id !== editingSession.id
     );
 
     if (professionalSessions.length > 0) {
@@ -279,7 +274,6 @@ const Schedule = () => {
       return;
     }
 
-    // Find names for the selected IDs
     const selectedPatient = patients.find(p => p.id === parseInt(editingSession.patientId));
     const selectedProfessional = professionals.find(p => p.id === parseInt(editingSession.professionalId));
     const selectedHorse = horses.find(h => h.id === parseInt(editingSession.horseId));
@@ -350,288 +344,50 @@ const Schedule = () => {
         </Button>
       </div>
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex justify-between items-center">
-            <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <h2 className="text-xl font-medium">
-              {currentDate.toLocaleDateString('es-UY', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </h2>
-            <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <DateNavigation
+        currentDate={currentDate}
+        onNavigate={navigateDate}
+      />
 
       <div className="space-y-4">
         {timeSlots.map((slot) => (
-          <Card key={slot.time} className="equine-card">
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="w-24 font-medium">{slot.time}</div>
-                <div className="flex-1">
-                  {slot.sessions.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {slot.sessions.map(session => (
-                        <div key={session.id} className="bg-equine-green-50 p-4 rounded-md">
-                          <div className="flex justify-between">
-                            <p className="font-medium">{session.patientName}</p>
-                            <div className="flex space-x-1">
-                              <Button variant="ghost" size="sm" onClick={() => handleEditSession(session)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(session)}>
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground">Profesional: {session.professionalName}</p>
-                          <p className="text-sm text-muted-foreground">Caballo: {session.horseName}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground italic text-center">
-                      No hay sesiones programadas para este horario
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <TimeSlotComponent
+            key={slot.time}
+            slot={slot}
+            onEdit={handleEditSession}
+            onDelete={handleDeleteClick}
+          />
         ))}
       </div>
 
-      {/* Add Session Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Programar Nueva Sesión</DialogTitle>
-            <DialogDescription>Complete la información para agendar una nueva sesión.</DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-1 gap-4 py-4">
-            <div>
-              <Label htmlFor="date">Fecha</Label>
-              <input 
-                type="date" 
-                id="date"
-                className="equine-input w-full"
-                value={newSession.date}
-                onChange={(e) => setNewSession({...newSession, date: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="time">Hora</Label>
-              <Select 
-                value={newSession.time} 
-                onValueChange={(value) => setNewSession({...newSession, time: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar hora" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 10 }, (_, i) => {
-                    const hour = i + 8;
-                    return (
-                      <SelectItem key={hour} value={`${hour}:00`}>
-                        {`${hour}:00`}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="patient">Paciente</Label>
-              <Select 
-                value={newSession.patientId} 
-                onValueChange={(value) => setNewSession({...newSession, patientId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar paciente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {patients.map((patient) => (
-                    <SelectItem key={patient.id} value={patient.id.toString()}>
-                      {`${patient.name} ${patient.lastName}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="professional">Profesional</Label>
-              <Select 
-                value={newSession.professionalId} 
-                onValueChange={(value) => setNewSession({...newSession, professionalId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar profesional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {professionals.map((professional) => (
-                    <SelectItem key={professional.id} value={professional.id.toString()}>
-                      {`${professional.name} ${professional.lastName}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="horse">Caballo</Label>
-              <Select 
-                value={newSession.horseId} 
-                onValueChange={(value) => setNewSession({...newSession, horseId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar caballo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {horses.filter(h => h.availability).map((horse) => (
-                    <SelectItem key={horse.id} value={horse.id.toString()}>
-                      {horse.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleAddSession} className="bg-equine-green-600 hover:bg-equine-green-700">Guardar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddSessionDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        newSession={newSession}
+        onNewSessionChange={setNewSession}
+        patients={patients}
+        professionals={professionals}
+        horses={horses}
+        onSave={handleAddSession}
+      />
 
-      {/* Edit Session Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Sesión</DialogTitle>
-            <DialogDescription>Modifique la información de la sesión programada.</DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-1 gap-4 py-4">
-            <div>
-              <Label htmlFor="edit-date">Fecha</Label>
-              <input 
-                type="date" 
-                id="edit-date"
-                className="equine-input w-full"
-                value={editingSession.date}
-                onChange={(e) => setEditingSession({...editingSession, date: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-time">Hora</Label>
-              <Select 
-                value={editingSession.time} 
-                onValueChange={(value) => setEditingSession({...editingSession, time: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar hora" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 10 }, (_, i) => {
-                    const hour = i + 8;
-                    return (
-                      <SelectItem key={hour} value={`${hour}:00`}>
-                        {`${hour}:00`}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="edit-patient">Paciente</Label>
-              <Select 
-                value={editingSession.patientId} 
-                onValueChange={(value) => setEditingSession({...editingSession, patientId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar paciente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {patients.map((patient) => (
-                    <SelectItem key={patient.id} value={patient.id.toString()}>
-                      {`${patient.name} ${patient.lastName}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="edit-professional">Profesional</Label>
-              <Select 
-                value={editingSession.professionalId} 
-                onValueChange={(value) => setEditingSession({...editingSession, professionalId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar profesional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {professionals.map((professional) => (
-                    <SelectItem key={professional.id} value={professional.id.toString()}>
-                      {`${professional.name} ${professional.lastName}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="edit-horse">Caballo</Label>
-              <Select 
-                value={editingSession.horseId} 
-                onValueChange={(value) => setEditingSession({...editingSession, horseId: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar caballo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {horses.filter(h => h.availability).map((horse) => (
-                    <SelectItem key={horse.id} value={horse.id.toString()}>
-                      {horse.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleUpdateSession} className="bg-equine-green-600 hover:bg-equine-green-700">Guardar Cambios</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditSessionDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        editingSession={editingSession}
+        onEditingSessionChange={setEditingSession}
+        patients={patients}
+        professionals={professionals}
+        horses={horses}
+        onSave={handleUpdateSession}
+      />
 
-      {/* Delete Confirmation Alert */}
-      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Está seguro de eliminar esta sesión?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente la sesión programada para {selectedSession?.patientName}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteSession}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteSessionAlert
+        open={isDeleteAlertOpen}
+        onOpenChange={setIsDeleteAlertOpen}
+        selectedSession={selectedSession}
+        onDelete={handleDeleteSession}
+      />
     </div>
   );
 };
