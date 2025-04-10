@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -12,25 +13,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 
-interface Session {
-  id: number;
-  date: string;
-  time: string;
-  patientId: number;
-  patientName: string;
-  professionalId: number;
-  professionalName: string;
-  horseId: number;
-  horseName: string;
-}
-
 interface Professional {
   id: number;
   name: string;
   lastName: string;
 }
 
-interface AdminHour {
+interface WorkHourEntry {
   id: number;
   professionalId: number;
   professionalName: string;
@@ -44,7 +33,7 @@ const ProfessionalHours = () => {
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
   const [workHours, setWorkHours] = useState<WorkHour[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newAdminHour, setNewAdminHour] = useState({
+  const [newWorkHour, setNewWorkHour] = useState({
     professionalId: '',
     date: format(new Date(), 'yyyy-MM-dd'),
     hours: 8,
@@ -59,7 +48,7 @@ const ProfessionalHours = () => {
     { id: 6, name: 'Juan', lastName: 'López' },
   ]);
 
-  const [adminHours, setAdminHours] = useState<AdminHour[]>([
+  const [workHourEntries, setWorkHourEntries] = useState<WorkHourEntry[]>([
     {
       id: 1,
       professionalId: 5,
@@ -74,86 +63,20 @@ const ProfessionalHours = () => {
       date: '2025-04-10',
       hours: 4
     },
-  ]);
-  
-  const [sessions] = useState<Session[]>([
-    {
-      id: 1,
-      date: '2025-04-09',
-      time: '10:00',
-      patientId: 1,
-      patientName: 'Juan Pérez',
-      professionalId: 1,
-      professionalName: 'Ana Silva',
-      horseId: 1,
-      horseName: 'Luna'
-    },
-    {
-      id: 2,
-      date: '2025-04-09',
-      time: '11:00',
-      patientId: 2,
-      patientName: 'María González',
-      professionalId: 2,
-      professionalName: 'Carlos Rodríguez',
-      horseId: 2,
-      horseName: 'Trueno'
-    },
     {
       id: 3,
+      professionalId: 1,
+      professionalName: 'Ana Silva',
       date: '2025-04-09',
-      time: '12:00',
-      patientId: 3,
-      patientName: 'Diego Martínez',
-      professionalId: 3,
-      professionalName: 'Laura Torres',
-      horseId: 3,
-      horseName: 'Estrella'
+      hours: 6
     },
     {
       id: 4,
-      date: '2025-04-09',
-      time: '16:00',
-      patientId: 4,
-      patientName: 'Valentina López',
-      professionalId: 4,
-      professionalName: 'Roberto Méndez',
-      horseId: 5,
-      horseName: 'Tornado'
-    },
-    {
-      id: 5,
-      date: '2025-04-10',
-      time: '10:00',
-      patientId: 1,
-      patientName: 'Juan Pérez',
-      professionalId: 1,
-      professionalName: 'Ana Silva',
-      horseId: 1,
-      horseName: 'Luna'
-    },
-    {
-      id: 6,
-      date: '2025-04-10',
-      time: '14:00',
-      patientId: 2,
-      patientName: 'María González',
       professionalId: 2,
       professionalName: 'Carlos Rodríguez',
-      horseId: 2,
-      horseName: 'Trueno'
+      date: '2025-04-10',
+      hours: 7
     },
-    {
-      id: 7,
-      date: '2025-04-11',
-      time: '11:00',
-      patientId: 3,
-      patientName: 'Diego Martínez',
-      professionalId: 1,
-      professionalName: 'Ana Silva',
-      horseId: 3,
-      horseName: 'Estrella'
-    }
   ]);
 
   const getDateRange = () => {
@@ -198,65 +121,19 @@ const ProfessionalHours = () => {
     const startStr = format(start, 'yyyy-MM-dd');
     const endStr = format(end, 'yyyy-MM-dd');
     
-    const filteredSessions = sessions.filter(
-      session => session.date >= startStr && session.date <= endStr
-    );
-    
-    const filteredAdminHours = adminHours.filter(
+    const filteredWorkHours = workHourEntries.filter(
       hour => hour.date >= startStr && hour.date <= endStr
     );
     
-    const sessionsWorkHours: WorkHour[] = [];
-    const professionalWorkMap = new Map<string, Map<string, { hours: number, sessions: number }>>();
-    
-    filteredSessions.forEach(session => {
-      const professionalKey = `${session.professionalId}`;
-      const dateKey = session.date;
-      
-      if (!professionalWorkMap.has(professionalKey)) {
-        professionalWorkMap.set(professionalKey, new Map());
-      }
-      
-      const professionalDates = professionalWorkMap.get(professionalKey)!;
-      
-      if (!professionalDates.has(dateKey)) {
-        professionalDates.set(dateKey, { hours: 0, sessions: 0 });
-      }
-      
-      const dateStats = professionalDates.get(dateKey)!;
-      dateStats.hours += 1;
-      dateStats.sessions += 1;
-    });
-    
-    professionalWorkMap.forEach((dateMap, professionalKey) => {
-      const professionalId = parseInt(professionalKey);
-      const professional = filteredSessions.find(s => s.professionalId === professionalId);
-      
-      if (professional) {
-        dateMap.forEach((stats, date) => {
-          sessionsWorkHours.push({
-            professionalId,
-            professionalName: professional.professionalName,
-            date,
-            hoursWorked: stats.hours,
-            sessionsCount: stats.sessions,
-            isAdministrative: false
-          });
-        });
-      }
-    });
-    
-    const adminWorkHours: WorkHour[] = filteredAdminHours.map(adminHour => ({
-      professionalId: adminHour.professionalId,
-      professionalName: adminHour.professionalName,
-      date: adminHour.date,
-      hoursWorked: adminHour.hours,
-      sessionsCount: 0,
-      isAdministrative: true
+    const formattedWorkHours: WorkHour[] = filteredWorkHours.map(entry => ({
+      professionalId: entry.professionalId,
+      professionalName: entry.professionalName,
+      date: entry.date,
+      hoursWorked: entry.hours,
     }));
     
-    setWorkHours([...sessionsWorkHours, ...adminWorkHours]);
-  }, [currentDate, viewType, sessions, adminHours]);
+    setWorkHours(formattedWorkHours);
+  }, [currentDate, viewType, workHourEntries]);
 
   const { displayText } = getDateRange();
   
@@ -264,8 +141,8 @@ const ProfessionalHours = () => {
     alert("Esta funcionalidad generaría un reporte de horas trabajadas para descarga");
   };
 
-  const handleAddAdminHours = () => {
-    if (!newAdminHour.professionalId) {
+  const handleAddWorkHours = () => {
+    if (!newWorkHour.professionalId) {
       toast({
         title: "Error",
         description: "Por favor selecciona un profesional",
@@ -274,28 +151,28 @@ const ProfessionalHours = () => {
       return;
     }
 
-    const selectedProfessional = professionals.find(p => p.id === parseInt(newAdminHour.professionalId));
+    const selectedProfessional = professionals.find(p => p.id === parseInt(newWorkHour.professionalId));
     if (!selectedProfessional) return;
 
-    const newId = adminHours.length > 0 ? Math.max(...adminHours.map(h => h.id)) + 1 : 1;
+    const newId = workHourEntries.length > 0 ? Math.max(...workHourEntries.map(h => h.id)) + 1 : 1;
     
-    const adminHourEntry: AdminHour = {
+    const workHourEntry: WorkHourEntry = {
       id: newId,
-      professionalId: parseInt(newAdminHour.professionalId),
+      professionalId: parseInt(newWorkHour.professionalId),
       professionalName: `${selectedProfessional.name} ${selectedProfessional.lastName}`,
-      date: newAdminHour.date,
-      hours: newAdminHour.hours,
+      date: newWorkHour.date,
+      hours: newWorkHour.hours,
     };
 
-    setAdminHours([...adminHours, adminHourEntry]);
+    setWorkHourEntries([...workHourEntries, workHourEntry]);
     setIsAddDialogOpen(false);
     
     toast({
-      title: "Horas administrativas registradas",
-      description: `Se han registrado ${newAdminHour.hours} horas para ${selectedProfessional.name} ${selectedProfessional.lastName}`,
+      title: "Horas registradas",
+      description: `Se han registrado ${newWorkHour.hours} horas para ${selectedProfessional.name} ${selectedProfessional.lastName}`,
     });
 
-    setNewAdminHour({
+    setNewWorkHour({
       professionalId: '',
       date: format(new Date(), 'yyyy-MM-dd'),
       hours: 8,
@@ -311,14 +188,14 @@ const ProfessionalHours = () => {
             <DialogTrigger asChild>
               <Button variant="default" className="bg-equine-green-600 hover:bg-equine-green-700 flex items-center gap-2">
                 <PlusCircle className="h-4 w-4" />
-                Registrar Horas Administrativas
+                Registrar Horas
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Registrar Horas Administrativas</DialogTitle>
+                <DialogTitle>Registrar Horas Trabajadas</DialogTitle>
                 <DialogDescription>
-                  Ingresa las horas trabajadas para personal administrativo.
+                  Ingresa las horas trabajadas para el profesional.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -327,8 +204,8 @@ const ProfessionalHours = () => {
                     Profesional
                   </Label>
                   <Select 
-                    value={newAdminHour.professionalId} 
-                    onValueChange={value => setNewAdminHour({...newAdminHour, professionalId: value})}
+                    value={newWorkHour.professionalId} 
+                    onValueChange={value => setNewWorkHour({...newWorkHour, professionalId: value})}
                   >
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Selecciona un profesional" />
@@ -349,8 +226,8 @@ const ProfessionalHours = () => {
                   <Input
                     id="date"
                     type="date"
-                    value={newAdminHour.date}
-                    onChange={e => setNewAdminHour({...newAdminHour, date: e.target.value})}
+                    value={newWorkHour.date}
+                    onChange={e => setNewWorkHour({...newWorkHour, date: e.target.value})}
                     className="col-span-3"
                   />
                 </div>
@@ -363,14 +240,14 @@ const ProfessionalHours = () => {
                     type="number"
                     min="0"
                     max="24"
-                    value={newAdminHour.hours}
-                    onChange={e => setNewAdminHour({...newAdminHour, hours: parseInt(e.target.value)})}
+                    value={newWorkHour.hours}
+                    onChange={e => setNewWorkHour({...newWorkHour, hours: parseInt(e.target.value)})}
                     className="col-span-3"
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" onClick={handleAddAdminHours}>
+                <Button type="submit" onClick={handleAddWorkHours}>
                   Guardar
                 </Button>
               </DialogFooter>
