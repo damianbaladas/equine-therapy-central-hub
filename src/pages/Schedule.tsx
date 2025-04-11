@@ -1,56 +1,28 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Users, CalendarRange, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import TimeSlotComponent from '@/components/schedule/TimeSlot';
 import DateNavigation from '@/components/schedule/DateNavigation';
+import SessionCalendar from '@/components/schedule/SessionCalendar';
 import { 
   AddSessionDialog, 
   EditSessionDialog, 
   DeleteSessionAlert 
 } from '@/components/schedule/ScheduleDialogs';
-
-interface Session {
-  id: number;
-  date: string;
-  time: string;
-  patientId: number;
-  patientName: string;
-  professionalId: number;
-  professionalName: string;
-  horseId: number;
-  horseName: string;
-}
-
-interface TimeSlot {
-  time: string;
-  sessions: Session[];
-}
-
-interface Patient {
-  id: number;
-  name: string;
-  lastName: string;
-}
-
-interface Professional {
-  id: number;
-  name: string;
-  lastName: string;
-}
-
-interface Horse {
-  id: number;
-  name: string;
-  availability: boolean;
-}
+import BatchSessionDialog from '@/components/schedule/BatchSessionDialog';
+import { useSessionCalendar } from '@/hooks/useSessionCalendar';
+import { Session, Patient, Professional, Horse } from '@/types/professionals';
 
 const Schedule = () => {
   const { toast } = useToast();
+  const [displayView, setDisplayView] = useState<'list' | 'calendar'>('list');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
@@ -123,6 +95,14 @@ const Schedule = () => {
     }
   ]);
 
+  const {
+    viewType,
+    calendarDays,
+    handleNavigate: handleCalendarNavigate,
+    handleDateClick,
+    setViewType
+  } = useSessionCalendar(sessions);
+
   const [newSession, setNewSession] = useState({
     patientId: '',
     professionalId: '',
@@ -140,7 +120,7 @@ const Schedule = () => {
     time: ''
   });
 
-  const timeSlots: TimeSlot[] = Array.from({ length: 10 }, (_, i) => {
+  const timeSlots = Array.from({ length: 10 }, (_, i) => {
     const hour = i + 8;
     const time = `${hour}:00`;
     return {
@@ -335,29 +315,105 @@ const Schedule = () => {
     });
   };
 
+  const handleBatchAddSessions = (date: string, entries: Array<{patientId: number, professionalId: number, horseId: number, time: string}>) => {
+    const newSessions: Session[] = entries.map((entry, index) => {
+      const patient = patients.find(p => p.id === entry.patientId);
+      const professional = professionals.find(p => p.id === entry.professionalId);
+      const horse = horses.find(h => h.id === entry.horseId);
+      
+      if (!patient || !professional || !horse) return null;
+
+      const id = sessions.length > 0 ? Math.max(...sessions.map(s => s.id)) + 1 + index : 1 + index;
+      
+      return {
+        id,
+        date,
+        time: entry.time,
+        patientId: entry.patientId,
+        patientName: `${patient.name} ${patient.lastName}`,
+        professionalId: entry.professionalId,
+        professionalName: `${professional.name} ${professional.lastName}`,
+        horseId: entry.horseId,
+        horseName: horse.name
+      };
+    }).filter(Boolean) as Session[];
+
+    if (newSessions.length === 0) return;
+    
+    setSessions([...sessions, ...newSessions]);
+    
+    toast({
+      title: "Sesiones agendadas en lote",
+      description: `Se han programado ${newSessions.length} sesiones con éxito.`,
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-equine-green-700">Agenda</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)} className="bg-equine-green-600 hover:bg-equine-green-700">
-          <Plus className="h-4 w-4 mr-2" /> Nueva Sesión
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            onClick={() => setIsBatchDialogOpen(true)} 
+            variant="secondary"
+            className="flex items-center gap-2"
+          >
+            <Users className="h-4 w-4" />
+            Registro Masivo
+          </Button>
+          <Button onClick={() => setIsAddDialogOpen(true)} className="bg-equine-green-600 hover:bg-equine-green-700">
+            <Plus className="h-4 w-4 mr-2" /> Nueva Sesión
+          </Button>
+        </div>
       </div>
 
-      <DateNavigation
-        currentDate={currentDate}
-        onNavigate={navigateDate}
-      />
+      <div className="mb-6">
+        <Tabs defaultValue="list" value={displayView} onValueChange={(value) => setDisplayView(value as 'list' | 'calendar')}>
+          <TabsList className="grid w-full max-w-xs grid-cols-2">
+            <TabsTrigger value="list" className="flex items-center gap-2">
+              <List className="h-4 w-4" />
+              <span>Lista</span>
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <CalendarRange className="h-4 w-4" />
+              <span>Calendario</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="list" className="mt-4">
+            <DateNavigation
+              currentDate={currentDate}
+              onNavigate={navigateDate}
+            />
 
-      <div className="space-y-4">
-        {timeSlots.map((slot) => (
-          <TimeSlotComponent
-            key={slot.time}
-            slot={slot}
-            onEdit={handleEditSession}
-            onDelete={handleDeleteClick}
-          />
-        ))}
+            <div className="space-y-4">
+              {timeSlots.map((slot) => (
+                <TimeSlotComponent
+                  key={slot.time}
+                  slot={slot}
+                  onEdit={handleEditSession}
+                  onDelete={handleDeleteClick}
+                />
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="calendar" className="mt-4">
+            <DateNavigation
+              currentDate={currentDate}
+              onNavigate={handleCalendarNavigate}
+              viewType={viewType}
+              onViewChange={setViewType}
+            />
+            
+            <SessionCalendar
+              calendarDays={calendarDays}
+              viewType={viewType}
+              onDateClick={handleDateClick}
+              currentDate={currentDate}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <AddSessionDialog
@@ -387,6 +443,15 @@ const Schedule = () => {
         onOpenChange={setIsDeleteAlertOpen}
         selectedSession={selectedSession}
         onDelete={handleDeleteSession}
+      />
+
+      <BatchSessionDialog
+        open={isBatchDialogOpen}
+        onOpenChange={setIsBatchDialogOpen}
+        patients={patients}
+        professionals={professionals}
+        horses={horses}
+        onSave={handleBatchAddSessions}
       />
     </div>
   );
