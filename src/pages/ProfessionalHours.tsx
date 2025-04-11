@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { es } from 'date-fns/locale';
-import { Download, PlusCircle, Table, CalendarDays } from 'lucide-react';
+import { Download, PlusCircle, Table, CalendarDays, Users } from 'lucide-react';
 
 import DateNavigation from '@/components/schedule/DateNavigation';
 import WorkHoursTable, { WorkHour } from '@/components/professionals/WorkHoursTable';
 import WorkHoursCalendar from '@/components/professionals/WorkHoursCalendar';
 import AddWorkHoursDialog from '@/components/professionals/AddWorkHoursDialog';
+import BatchWorkHoursDialog from '@/components/professionals/BatchWorkHoursDialog';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -32,6 +33,7 @@ const ProfessionalHours = () => {
   const [displayView, setDisplayView] = useState<'table' | 'calendar'>('table');
   const [workHours, setWorkHours] = useState<WorkHour[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false);
   const [newWorkHour, setNewWorkHour] = useState({
     professionalId: '',
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -178,6 +180,30 @@ const ProfessionalHours = () => {
     });
   };
 
+  const handleBatchAddWorkHours = (date: string, entries: { professionalId: number, hours: number }[]) => {
+    const newEntries: WorkHourEntry[] = entries.map(entry => {
+      const professional = professionals.find(p => p.id === entry.professionalId);
+      if (!professional) return null;
+
+      const newId = workHourEntries.length > 0 ? Math.max(...workHourEntries.map(h => h.id)) + 1 : 1;
+      
+      return {
+        id: newId + entries.indexOf(entry),
+        professionalId: entry.professionalId,
+        professionalName: `${professional.name} ${professional.lastName}`,
+        date,
+        hours: entry.hours,
+      };
+    }).filter(Boolean) as WorkHourEntry[];
+
+    setWorkHourEntries([...workHourEntries, ...newEntries]);
+    
+    toast({
+      title: "Horas registradas en lote",
+      description: `Se registraron horas para ${newEntries.length} profesionales`,
+    });
+  };
+
   const handleCalendarDateChange = (date: Date) => {
     setCurrentDate(date);
     setViewType('day');
@@ -188,14 +214,24 @@ const ProfessionalHours = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-equine-green-700">Control de Horas</h1>
         <div className="flex space-x-2">
-          <Button 
-            onClick={() => setIsAddDialogOpen(true)}
-            variant="default" 
-            className="bg-equine-green-600 hover:bg-equine-green-700 flex items-center gap-2"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Registrar Horas
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setIsBatchDialogOpen(true)}
+              variant="secondary" 
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              Registro Masivo
+            </Button>
+            <Button 
+              onClick={() => setIsAddDialogOpen(true)}
+              variant="default" 
+              className="bg-equine-green-600 hover:bg-equine-green-700 flex items-center gap-2"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Registrar Horas
+            </Button>
+          </div>
           <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Exportar reporte
@@ -246,6 +282,13 @@ const ProfessionalHours = () => {
         onNewWorkHourChange={setNewWorkHour}
         professionals={professionals}
         onSave={handleAddWorkHours}
+      />
+
+      <BatchWorkHoursDialog
+        open={isBatchDialogOpen}
+        onOpenChange={setIsBatchDialogOpen}
+        professionals={professionals}
+        onSave={handleBatchAddWorkHours}
       />
     </div>
   );
