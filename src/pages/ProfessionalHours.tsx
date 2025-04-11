@@ -1,14 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { es } from 'date-fns/locale';
-import { Download, PlusCircle } from 'lucide-react';
+import { Download, PlusCircle, Table, CalendarDays } from 'lucide-react';
 
 import DateNavigation from '@/components/schedule/DateNavigation';
 import WorkHoursTable, { WorkHour } from '@/components/professionals/WorkHoursTable';
+import WorkHoursCalendar from '@/components/professionals/WorkHoursCalendar';
 import AddWorkHoursDialog from '@/components/professionals/AddWorkHoursDialog';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Professional {
   id: number;
@@ -28,6 +29,7 @@ const ProfessionalHours = () => {
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
+  const [displayView, setDisplayView] = useState<'table' | 'calendar'>('table');
   const [workHours, setWorkHours] = useState<WorkHour[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newWorkHour, setNewWorkHour] = useState({
@@ -176,6 +178,11 @@ const ProfessionalHours = () => {
     });
   };
 
+  const handleCalendarDateChange = (date: Date) => {
+    setCurrentDate(date);
+    setViewType('day');
+  };
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
@@ -203,10 +210,34 @@ const ProfessionalHours = () => {
         onViewChange={setViewType}
       />
 
-      <WorkHoursTable 
-        workHours={workHours} 
-        period={displayText}
-      />
+      <div className="mb-6">
+        <Tabs defaultValue="table" value={displayView} onValueChange={(value) => setDisplayView(value as 'table' | 'calendar')}>
+          <TabsList className="grid w-full max-w-xs grid-cols-2">
+            <TabsTrigger value="table" className="flex items-center gap-2">
+              <Table className="h-4 w-4" />
+              <span>Tabla</span>
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4" />
+              <span>Calendario</span>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="table" className="mt-4">
+            <WorkHoursTable 
+              workHours={workHours} 
+              period={displayText}
+            />
+          </TabsContent>
+          <TabsContent value="calendar" className="mt-4">
+            <WorkHoursCalendar
+              workHours={workHours}
+              period={displayText}
+              currentDate={currentDate}
+              onDateChange={handleCalendarDateChange}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
 
       <AddWorkHoursDialog
         open={isAddDialogOpen}
