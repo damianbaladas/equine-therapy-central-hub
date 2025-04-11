@@ -3,14 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Download, PlusCircle } from 'lucide-react';
+import { Download, PlusCircle } from 'lucide-react';
 
 import DateNavigation from '@/components/schedule/DateNavigation';
 import WorkHoursTable, { WorkHour } from '@/components/professionals/WorkHoursTable';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import AddWorkHoursDialog from '@/components/professionals/AddWorkHoursDialog';
 import { useToast } from '@/hooks/use-toast';
 
 interface Professional {
@@ -184,75 +181,14 @@ const ProfessionalHours = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-equine-green-700">Control de Horas</h1>
         <div className="flex space-x-2">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="default" className="bg-equine-green-600 hover:bg-equine-green-700 flex items-center gap-2">
-                <PlusCircle className="h-4 w-4" />
-                Registrar Horas
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar Horas Trabajadas</DialogTitle>
-                <DialogDescription>
-                  Ingresa las horas trabajadas para el profesional.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="professional" className="text-right">
-                    Profesional
-                  </Label>
-                  <Select 
-                    value={newWorkHour.professionalId} 
-                    onValueChange={value => setNewWorkHour({...newWorkHour, professionalId: value})}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecciona un profesional" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {professionals.map(professional => (
-                        <SelectItem key={professional.id} value={professional.id.toString()}>
-                          {professional.name} {professional.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="date" className="text-right">
-                    Fecha
-                  </Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={newWorkHour.date}
-                    onChange={e => setNewWorkHour({...newWorkHour, date: e.target.value})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="hours" className="text-right">
-                    Horas
-                  </Label>
-                  <Input
-                    id="hours"
-                    type="number"
-                    min="0"
-                    max="24"
-                    value={newWorkHour.hours}
-                    onChange={e => setNewWorkHour({...newWorkHour, hours: parseInt(e.target.value)})}
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" onClick={handleAddWorkHours}>
-                  Guardar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            onClick={() => setIsAddDialogOpen(true)}
+            variant="default" 
+            className="bg-equine-green-600 hover:bg-equine-green-700 flex items-center gap-2"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Registrar Horas
+          </Button>
           <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Exportar reporte
@@ -270,6 +206,15 @@ const ProfessionalHours = () => {
       <WorkHoursTable 
         workHours={workHours} 
         period={displayText}
+      />
+
+      <AddWorkHoursDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        newWorkHour={newWorkHour}
+        onNewWorkHourChange={setNewWorkHour}
+        professionals={professionals}
+        onSave={handleAddWorkHours}
       />
     </div>
   );
