@@ -21,6 +21,12 @@ export const useSessionCalendar = (sessions: Session[]) => {
   const [viewType, setViewType] = useState<CalendarViewType>('week');
   const [isCreateBatchDialogOpen, setIsCreateBatchDialogOpen] = useState(false);
 
+  // Define getSessionsForDate function before it's used
+  const getSessionsForDate = (date: Date, allSessions: Session[]): Session[] => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    return allSessions.filter(session => session.date === dateString);
+  };
+
   const dateRange = useMemo(() => {
     if (viewType === 'day') {
       return {
@@ -119,11 +125,6 @@ export const useSessionCalendar = (sessions: Session[]) => {
     
     return days;
   }, [dateRange, viewType, sessions, currentDate]);
-  
-  const getSessionsForDate = (date: Date, allSessions: Session[]): Session[] => {
-    const dateString = format(date, 'yyyy-MM-dd');
-    return allSessions.filter(session => session.date === dateString);
-  };
 
   const handleNavigate = (direction: 'prev' | 'next') => {
     if (viewType === 'day') {
