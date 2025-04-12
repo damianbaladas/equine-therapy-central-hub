@@ -141,7 +141,12 @@ export const useSessionCalendar = (sessions: Session[]) => {
   };
 
   const handleDateClick = (date: Date) => {
+    // Actualizar la fecha actual al día seleccionado
     setCurrentDate(date);
+    // Si estamos en vista mensual, cambiamos a vista diaria al hacer clic en un día
+    if (viewType === 'month') {
+      setViewType('day');
+    }
   };
 
   const showCreateBatchDialog = () => {

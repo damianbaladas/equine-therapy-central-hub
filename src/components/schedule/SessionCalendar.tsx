@@ -45,6 +45,14 @@ const SessionCalendar: React.FC<SessionCalendarProps> = ({
             </div>
           )}
           
+          {viewType === 'day' && (
+            <div className="mb-4 text-center">
+              <h3 className="text-lg font-medium">
+                {format(currentDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+              </h3>
+            </div>
+          )}
+          
           <div className={`grid grid-cols-${numColumns} gap-1`}
             style={{ gridTemplateColumns: `repeat(${numColumns}, minmax(0, 1fr))` }}>
             {calendarDays.map((dayInfo, idx) => (
@@ -56,8 +64,10 @@ const SessionCalendar: React.FC<SessionCalendarProps> = ({
                   ${isToday(dayInfo.date) ? 'border-blue-500 border-2' : ''}
                   ${isSelected(dayInfo.date) ? 'bg-blue-50' : ''}
                   ${viewType === 'day' ? 'min-h-[300px]' : ''}
+                  hover:bg-blue-50
                 `}
                 onClick={() => onDateClick(dayInfo.date)}
+                title={viewType === 'month' ? 'Haz clic para ver detalles del día' : ''}
               >
                 <div className="flex justify-between items-center mb-1">
                   <span className={`text-sm font-medium ${
