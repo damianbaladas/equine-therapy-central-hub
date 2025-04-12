@@ -120,7 +120,6 @@ const Schedule = () => {
     setViewType
   } = useSessionCalendar(sessions);
 
-  // Componentes para las diferentes vistas
   const listContent = (
     <>
       <DateNavigation
@@ -168,7 +167,6 @@ const Schedule = () => {
         />
       </div>
 
-      {/* Diálogos para agregar, editar y eliminar sesiones */}
       <AddSessionDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
