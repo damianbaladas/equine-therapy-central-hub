@@ -7,7 +7,7 @@ import { es } from 'date-fns/locale';
 import { Session } from '@/types/professionals';
 import { useToast } from '@/hooks/use-toast';
 
-export type CalendarViewType = 'week' | 'month';
+export type CalendarViewType = 'day' | 'week' | 'month';
 
 export interface DayWithSessions {
   date: Date;
@@ -22,7 +22,13 @@ export const useSessionCalendar = (sessions: Session[]) => {
   const [isCreateBatchDialogOpen, setIsCreateBatchDialogOpen] = useState(false);
 
   const dateRange = useMemo(() => {
-    if (viewType === 'week') {
+    if (viewType === 'day') {
+      return {
+        start: currentDate,
+        end: currentDate,
+        displayText: format(currentDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })
+      };
+    } else if (viewType === 'week') {
       const start = startOfWeek(currentDate, { weekStartsOn: 1 });
       const end = endOfWeek(currentDate, { weekStartsOn: 1 });
       return {
@@ -46,7 +52,13 @@ export const useSessionCalendar = (sessions: Session[]) => {
     
     let days: DayWithSessions[] = [];
     
-    if (viewType === 'month') {
+    if (viewType === 'day') {
+      days = [{
+        date: currentDate,
+        sessions: getSessionsForDate(currentDate, sessions),
+        isCurrentMonth: true
+      }];
+    } else if (viewType === 'month') {
       // For month view, we need to include days from previous and next months
       // to fill the calendar grid
       const monthStart = startOfMonth(currentDate);
@@ -114,7 +126,13 @@ export const useSessionCalendar = (sessions: Session[]) => {
   };
 
   const handleNavigate = (direction: 'prev' | 'next') => {
-    if (viewType === 'week') {
+    if (viewType === 'day') {
+      setCurrentDate(prev => {
+        const newDate = new Date(prev);
+        newDate.setDate(newDate.getDate() + (direction === 'prev' ? -1 : 1));
+        return newDate;
+      });
+    } else if (viewType === 'week') {
       setCurrentDate(prev => direction === 'prev' ? subWeeks(prev, 1) : addWeeks(prev, 1));
     } else {
       setCurrentDate(prev => direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1));

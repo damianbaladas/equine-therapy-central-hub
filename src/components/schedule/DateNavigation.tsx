@@ -12,12 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CalendarViewType } from '@/hooks/useSessionCalendar';
 
 interface DateNavigationProps {
   currentDate: Date;
   onNavigate: (direction: 'prev' | 'next') => void;
-  viewType?: 'day' | 'week' | 'month';
-  onViewChange?: (view: 'day' | 'week' | 'month') => void;
+  viewType?: CalendarViewType;
+  onViewChange?: (view: CalendarViewType) => void;
 }
 
 const DateNavigation: React.FC<DateNavigationProps> = ({ 
@@ -54,7 +55,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
             {onViewChange && (
               <Select 
                 value={viewType} 
-                onValueChange={(value: 'day' | 'week' | 'month') => onViewChange(value)}
+                onValueChange={(value: CalendarViewType) => onViewChange(value)}
               >
                 <SelectTrigger className="w-[180px] h-8">
                   <SelectValue placeholder="Seleccionar vista" />

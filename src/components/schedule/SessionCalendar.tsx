@@ -27,7 +27,7 @@ const SessionCalendar: React.FC<SessionCalendarProps> = ({
   currentDate
 }) => {
   // Number of columns varies by view type
-  const numColumns = viewType === 'week' ? 7 : 7;
+  const numColumns = viewType === 'day' ? 1 : viewType === 'week' ? 7 : 7;
   const isToday = (date: Date) => format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
   const isSelected = (date: Date) => format(date, 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd');
 
@@ -55,6 +55,7 @@ const SessionCalendar: React.FC<SessionCalendarProps> = ({
                   ${!dayInfo.isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}
                   ${isToday(dayInfo.date) ? 'border-blue-500 border-2' : ''}
                   ${isSelected(dayInfo.date) ? 'bg-blue-50' : ''}
+                  ${viewType === 'day' ? 'min-h-[300px]' : ''}
                 `}
                 onClick={() => onDateClick(dayInfo.date)}
               >
@@ -64,16 +65,16 @@ const SessionCalendar: React.FC<SessionCalendarProps> = ({
                   }`}>
                     {format(dayInfo.date, 'd')}
                   </span>
-                  {viewType === 'month' && dayInfo.sessions.length > 0 && (
+                  {(viewType === 'month' || viewType === 'day') && dayInfo.sessions.length > 0 && (
                     <Badge variant="outline" className="text-xs">
                       {dayInfo.sessions.length}
                     </Badge>
                   )}
                 </div>
                 
-                {/* In week view, show session details */}
-                {viewType === 'week' && (
-                  <div className="space-y-1 overflow-y-auto max-h-[80px]">
+                {/* In week or day view, show session details */}
+                {(viewType === 'week' || viewType === 'day') && (
+                  <div className={`space-y-1 overflow-y-auto ${viewType === 'day' ? 'max-h-[250px]' : 'max-h-[80px]'}`}>
                     {dayInfo.sessions.map(session => (
                       <SessionItem key={session.id} session={session} />
                     ))}
