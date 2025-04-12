@@ -24,7 +24,7 @@ export const useScheduleState = (
     patientId: '',
     professionalId: '',
     horseId: '',
-    date: format(new Date()),
+    date: format(new Date(), 'yyyy-MM-dd'),
     time: '10:00'
   });
 
@@ -274,6 +274,7 @@ export const useScheduleState = (
     newSession,
     setNewSession,
     editingSession,
+    setEditingSession,
     timeSlots: Array.from({ length: 10 }, (_, i) => {
       const hour = i + 8;
       const time = `${hour}:00`;

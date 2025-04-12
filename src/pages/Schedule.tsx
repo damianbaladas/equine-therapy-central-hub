@@ -102,6 +102,7 @@ const Schedule = () => {
     newSession,
     setNewSession,
     editingSession,
+    setEditingSession,
     timeSlots,
     navigateDate,
     handleAddSession,
