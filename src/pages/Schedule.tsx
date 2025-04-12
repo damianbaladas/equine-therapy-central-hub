@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DateNavigation from '@/components/schedule/DateNavigation';
 import SessionCalendar from '@/components/schedule/SessionCalendar';
@@ -9,7 +8,7 @@ import {
 } from '@/components/schedule/ScheduleDialogs';
 import BatchSessionDialog from '@/components/schedule/BatchSessionDialog';
 import { useSessionCalendar } from '@/hooks/useSessionCalendar';
-import { useScheduleState } from '@/hooks/useScheduleState';
+import { useScheduleState } from '@/hooks/schedule';
 import ScheduleHeader from '@/components/schedule/ScheduleHeader';
 import ScheduleViewSelector from '@/components/schedule/ScheduleViewSelector';
 import TimeSlotList from '@/components/schedule/TimeSlotList';
