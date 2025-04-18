@@ -1,7 +1,7 @@
 
 import React from 'react';
 import DateNavigation from './DateNavigation';
-import { TimeSlotList } from './TimeSlotList';
+import TimeSlotList from './TimeSlotList';
 import SessionCalendar from './SessionCalendar';
 import { CalendarViewType } from '@/hooks/calendar/types';
 import { Session } from '@/types/professionals';
