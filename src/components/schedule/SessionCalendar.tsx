@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { CalendarViewType, DayWithSessions } from '@/hooks/calendar/types';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Session } from '@/types/professionals';
 import CalendarDay from './CalendarDay';
 import WeekDaysHeader from './WeekDaysHeader';
 import DayHeader from './DayHeader';
@@ -13,13 +14,15 @@ interface SessionCalendarProps {
   viewType: CalendarViewType;
   onDateClick: (date: Date) => void;
   currentDate: Date;
+  onEditSession?: (session: Session) => void;
 }
 
 const SessionCalendar: React.FC<SessionCalendarProps> = ({
   calendarDays,
   viewType,
   onDateClick,
-  currentDate
+  currentDate,
+  onEditSession
 }) => {
   // Number of columns varies by view type
   const numColumns = viewType === 'day' ? 1 : viewType === 'week' ? 7 : 7;
@@ -43,6 +46,7 @@ const SessionCalendar: React.FC<SessionCalendarProps> = ({
                 isToday={isToday(dayInfo.date)}
                 isSelected={isSelected(dayInfo.date)}
                 onDateClick={onDateClick}
+                onEditSession={onEditSession}
               />
             ))}
           </div>

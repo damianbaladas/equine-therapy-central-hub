@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { CalendarViewType } from '@/hooks/calendar/types';
+import { Session } from '@/types/professionals';
 import SessionItem from './SessionItem';
 
 interface CalendarDayProps {
@@ -18,6 +19,7 @@ interface CalendarDayProps {
   isToday: boolean;
   isSelected: boolean;
   onDateClick: (date: Date) => void;
+  onEditSession?: (session: Session) => void;
 }
 
 const CalendarDay: React.FC<CalendarDayProps> = ({
@@ -25,7 +27,8 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   viewType,
   isToday,
   isSelected,
-  onDateClick
+  onDateClick,
+  onEditSession
 }) => {
   return (
     <div 
@@ -57,7 +60,11 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
       {(viewType === 'week' || viewType === 'day') && (
         <div className={`space-y-1 overflow-y-auto ${viewType === 'day' ? 'max-h-[250px]' : 'max-h-[80px]'}`}>
           {dayInfo.sessions.map(session => (
-            <SessionItem key={session.id} session={session} />
+            <SessionItem 
+              key={session.id} 
+              session={session} 
+              onEdit={onEditSession}
+            />
           ))}
         </div>
       )}
@@ -68,7 +75,13 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
           {dayInfo.sessions.slice(0, 3).map(session => (
             <Tooltip key={session.id}>
               <TooltipTrigger>
-                <div className="w-2 h-2 rounded-full bg-equine-green-600"></div>
+                <div 
+                  className="w-2 h-2 rounded-full bg-equine-green-600 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onEditSession) onEditSession(session);
+                  }}
+                />
               </TooltipTrigger>
               <TooltipContent>
                 <p>{session.time} - {session.patientName}</p>

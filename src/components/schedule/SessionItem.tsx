@@ -9,13 +9,24 @@ import {
 
 interface SessionItemProps {
   session: Session;
+  onEdit?: (session: Session) => void;
 }
 
-const SessionItem: React.FC<SessionItemProps> = ({ session }) => {
+const SessionItem: React.FC<SessionItemProps> = ({ session, onEdit }) => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent calendar day click when clicking session
+    if (onEdit) {
+      onEdit(session);
+    }
+  };
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="px-1 py-0.5 bg-equine-green-50 border border-equine-green-200 rounded text-xs truncate">
+        <div 
+          className="px-1 py-0.5 bg-equine-green-50 border border-equine-green-200 rounded text-xs truncate cursor-pointer hover:bg-equine-green-100"
+          onClick={handleClick}
+        >
           {session.time} - {session.patientName}
         </div>
       </TooltipTrigger>
