@@ -34,7 +34,7 @@ const SessionCalendar: React.FC<SessionCalendarProps> = ({
       <Card>
         <CardContent className="p-4">
           {viewType === 'week' && <WeekDaysHeader />}
-          {viewType === 'day' && <DayHeader currentDate={currentDate} />}
+          {viewType === 'day' && <DayHeader currentDate={calendarDays[0].date} />}
           
           <div className={`grid grid-cols-${numColumns} gap-1`}
             style={{ gridTemplateColumns: `repeat(${numColumns}, minmax(0, 1fr))` }}>

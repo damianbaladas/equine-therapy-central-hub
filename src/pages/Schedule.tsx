@@ -147,6 +147,7 @@ const Schedule = () => {
         viewType={viewType}
         onDateClick={handleDateClick}
         currentDate={currentDate}
+        onEditSession={handleEditSession}
       />
     </>
   );
