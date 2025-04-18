@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { UsersRound, Calendar, UserRound, PawPrint, Clock } from 'lucide-react';
+import { initialSessions } from '@/data/mockScheduleData';
+import { formatDate } from '@/hooks/schedule/types';
 
 type StatCardProps = {
   title: string;
@@ -22,7 +24,15 @@ const StatCard = ({ title, value, icon, color }: StatCardProps) => {
 };
 
 const StatCards = () => {
-  // Mock data (would be replaced by real data in a production app)
+  // Filter today's sessions
+  const today = formatDate(new Date());
+  const todaySessions = initialSessions.filter(session => session.date === today);
+  
+  // Get the next session time if any sessions today
+  const nextSession = todaySessions.sort((a, b) => 
+    a.time.localeCompare(b.time)
+  )[0];
+  
   const stats = [
     {
       title: "Pacientes Activos",
@@ -32,7 +42,7 @@ const StatCards = () => {
     },
     {
       title: "Sesiones Hoy",
-      value: 8,
+      value: todaySessions.length,
       icon: <Calendar size={24} />,
       color: "bg-equine-brown-100",
     },
@@ -50,7 +60,7 @@ const StatCards = () => {
     },
     {
       title: "Próxima Sesión",
-      value: "10:00 AM",
+      value: nextSession ? nextSession.time : "No hay sesiones",
       icon: <Clock size={24} />,
       color: "bg-equine-green-100",
     },

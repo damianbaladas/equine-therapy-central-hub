@@ -3,15 +3,13 @@ import React from 'react';
 import { Calendar, ChevronRight, UsersRound, UserRound, PawPrint } from 'lucide-react';
 import StatCards from '@/components/dashboard/StatCards';
 import { Link } from 'react-router-dom';
+import { initialSessions } from '@/data/mockScheduleData';
+import { formatDate } from '@/hooks/schedule/types';
 
 const Index = () => {
-  // Mock upcoming sessions (would come from a database in a real app)
-  const upcomingSessions = [
-    { id: 1, patient: 'Juan Pérez', professional: 'Ana Silva', horse: 'Luna', time: '10:00 AM' },
-    { id: 2, patient: 'María González', professional: 'Carlos Rodríguez', horse: 'Trueno', time: '11:00 AM' },
-    { id: 3, patient: 'Diego Martínez', professional: 'Laura Torres', horse: 'Estrella', time: '12:00 PM' },
-    { id: 4, patient: 'Valentina López', professional: 'Roberto Méndez', horse: 'Relámpago', time: '4:00 PM' },
-  ];
+  // Filter sessions to only show today's sessions
+  const today = formatDate(new Date());
+  const upcomingSessions = initialSessions.filter(session => session.date === today);
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -47,14 +45,22 @@ const Index = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-equine-green-200">
-                {upcomingSessions.map((session) => (
-                  <tr key={session.id} className="hover:bg-equine-green-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{session.time}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{session.patient}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{session.professional}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{session.horse}</td>
+                {upcomingSessions.length > 0 ? (
+                  upcomingSessions.map((session) => (
+                    <tr key={session.id} className="hover:bg-equine-green-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{session.time}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{session.patientName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{session.professionalName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{session.horseName}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                      No hay sesiones programadas para hoy
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
