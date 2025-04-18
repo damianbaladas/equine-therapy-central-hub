@@ -1,22 +1,17 @@
-
 import { useState } from 'react';
 import { Session, Patient, Professional, Horse } from '@/types/professionals';
-import { format } from 'date-fns';
-import { 
-  NewSessionData, 
-  EditingSessionData, 
-  ScheduleState, 
-  formatDate 
-} from './types';
-import { useSessionUtils } from './sessionUtils';
+import { NewSessionData, EditingSessionData, formatDate } from './types';
+import { useSessionCreation } from './sessionCreation';
+import { generateTimeSlots } from './timeSlots';
+import { useToast } from '@/hooks/use-toast';
 
 export const useScheduleState = (
   initialSessions: Session[],
   patients: Patient[],
   professionals: Professional[],
   horses: Horse[]
-): ScheduleState => {
-  // Estados básicos
+) => {
+  // Basic states
   const [displayView, setDisplayView] = useState<'list' | 'calendar'>('list');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -26,12 +21,12 @@ export const useScheduleState = (
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
 
-  // Estados para formularios
+  // Form states
   const [newSession, setNewSession] = useState<NewSessionData>({
     patientId: '',
     professionalId: '',
     horseId: '',
-    date: format(new Date(), 'yyyy-MM-dd'),
+    date: formatDate(new Date()),
     time: '10:00'
   });
 
@@ -44,15 +39,10 @@ export const useScheduleState = (
     time: ''
   });
 
-  // Utilidades para sesiones
-  const { 
-    validateSessionData, 
-    createSessionObject, 
-    generateTimeSlots, 
-    toast 
-  } = useSessionUtils(sessions, patients, professionals, horses);
+  const { toast } = useToast();
+  const { validateSessionData, createSessionObject } = useSessionCreation(sessions, patients, professionals, horses);
 
-  // Funciones de navegación
+  // Navigation functions
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
     if (direction === 'prev') {
@@ -63,13 +53,13 @@ export const useScheduleState = (
     setCurrentDate(newDate);
   };
 
-  // Funciones para manipulación de sesiones
+  // Session management functions
   const handleAddSession = () => {
     if (!validateSessionData(
-      newSession.patientId, 
-      newSession.professionalId, 
-      newSession.horseId, 
-      newSession.date, 
+      newSession.patientId,
+      newSession.professionalId,
+      newSession.horseId,
+      newSession.date,
       newSession.time
     )) {
       return;
@@ -206,7 +196,7 @@ export const useScheduleState = (
     setNewSession,
     editingSession,
     setEditingSession,
-    timeSlots: generateTimeSlots(currentDate),
+    timeSlots: generateTimeSlots(currentDate, sessions),
     navigateDate,
     handleAddSession,
     handleEditSession,
